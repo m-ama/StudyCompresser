@@ -66,3 +66,18 @@ if not any(x in size[-1] for x in ['M', 'G']):
     raise Exception('Invalid file size multiple. Please use either "M" '
                     'for megabytes and "G" for gigabytes')
 
+#----------------------------------------------------------------------
+# Begin Code
+#----------------------------------------------------------------------
+# Init Pandas Dataframe
+root = []
+dir = []
+file = []
+for r, d, f in os.walk(input):
+    root.append(r)
+    dir.append(d)
+    file.append(f)
+
+files = {'Directory': root,
+         'File': file}
+files = pd.DataFrame(files)
