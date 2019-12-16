@@ -118,9 +118,9 @@ while i < numFiles:
         i += 1
     # print('Zip {}: {} file'.format(numCompressed, len(files2compress)))
     inputs = trange(len(files2compress),
-    desc=args.name + '.part' + str ( numCompressed ) + '.zip',
-    ncols=70,
-    unit='files')
+                    desc=args.name + '.part' + str ( numCompressed ) + '.zip',
+                    ncols=70,
+                    unit='file')
     with zipfile.ZipFile(
         op.join(
             args.output, args.name + '.part' + str ( numCompressed ) + '.zip'),
