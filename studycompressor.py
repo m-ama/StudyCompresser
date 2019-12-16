@@ -98,10 +98,14 @@ for root, dirs, files in os.walk( args.input ):
     file_dir.extend( root for f in files )
     file_list.extend( f for f in files )
     file_size.extend( op.getsize( op.join( root,f ) ) for f in files )
-
+if sizeLimit < min(file_size):
+    raise Exception('Compression size {} is lower than the smallest '
+                    'file detected ({}{}). Please update compression '
+                    'size to accomodate this.'.format(args.size,
+                    min(file_size)/bytemul,
+                    args.size[-1]))
 numFiles = len( file_list )
 print('Found a total of {} files'.format(numFiles))
-
 output_name = []
 i = 0
 numCompressed = 1
