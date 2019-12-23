@@ -1,0 +1,13 @@
+// This is a debug configuration file for studycompressor.py
+// for use in VS Code. Input variables and options to test
+// and debug the code should be modified here.
+
+// Author:  Siddhartha Dhiman
+//E-mail:   dhiman@musc.edu
+
+"name": "Python: comprssr",
+"type": "python",
+"request": "launch",
+"program": "${workspaceFolder}/studycompressor.py",
+"console": "integratedTerminal"
+"args" : ["/Users/sid/Downloads/Dicoms", "/Users/sid/Downloads/CompTest"]
