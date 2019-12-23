@@ -11,6 +11,12 @@ import re
 import zipfile
 from tqdm import tqdm, trange
 import hashlib
+from pathlib import Path
+
+#----------------------------------------------------------------------
+# Perma Variables
+#----------------------------------------------------------------------
+consoleCols = 100 # number of columns to use in console printing
 
 #----------------------------------------------------------------------
 # Parse Arguments
@@ -84,9 +90,9 @@ if 'csv' not in args.type and 'excel' not in args.type:
 # Declare Variables
 #----------------------------------------------------------------------
 if 'M' in args.size[-1]:
-    bytemul = 1E6
+    bytemul = 1048576
 elif 'G' in args.size[-1]:
-    bytemul = 1E9
+    bytemul = 1073741824
     
 size = int(args.size[:-1])
 sizeLimit = size * bytemul
@@ -128,27 +134,41 @@ zip_name = []
 checksum = []
 numComp = 0
 pbar = tqdm(total=numFiles - 1,
-            desc='Compressing',
-            ncols=70,
-            unit='files')
+            ncols=consoleCols,
+            unit='file')
 while i < (numFiles - 1):
     compSize = 0
     zPath = op.join(args.output,
                         args.name + '.part' + str(numComp) + '.zip')
+    tqdm.write(('=' * consoleCols))
     tqdm.write('Creating {}.part{}.zip'.format(args.name, numComp))
+    filesincomp = 0
+    # This loop creates a new zipfile, added each while iteratively
+    # and checks its size. Enclosing this in a while loop allows this
+    # process to occur iteratively until the zipfile's size meets the
+    # size limit imposed on it.
     with zipfile.ZipFile(zPath, 'w') as zipMe:
         while compSize < sizeLimit:
+            filesincomp += 1
             file2comp = op.join(file_dir[i], file_list[i])
             zipMe.write(file2comp, compress_type=zipfile.ZIP_DEFLATED)
             compSize += op.getsize(zPath)
+            # compSize += Path(zPath).stat().st_size
+            # compSize += sum([zinfo.file_size for zinfo in zipMe.filelist])
+            tqdm.write('{}{}'.format(compSize/bytemul, args.size[-1]))
             zip_name.append(args.name + '.part' + str(numComp) + '.zip')
             checksum.append(hashlib.md5(open(zPath, 'rb').read()).hexdigest())
             i += 1
+            pbar.set_description(
+                '   adding: {}'.format(file2comp))
             pbar.update(1)
             if i == numFiles:
                 break
     zipMe.close()
+    tqdm.write('Archive size: {}{}'. format(compSize/bytemul, args.size[-1]))
+    tqdm.write('Files in archive: {}'.format(filesincomp))
     numComp += 1
+# Convert table filesize to same unit as input
 file_size = [round(i/bytemul, 2) for i in file_size]
 dFrame = pd.DataFrame({'MD5 Checksum': checksum,
                        'Archive Name': zip_name,
