@@ -124,7 +124,7 @@ if sizeLimit < max(file_size):
                     'size ({}{}). Please update the filesize '
                     'flag.'.format(max(file_size)/bytemul, args.size[-1]))
 numFiles = len(file_list)
-print('Found a total of {} files'.format(numFiles))
+tqdm.write('Found a total of {} files'.format(numFiles))
 
 # Compression loop using two while loops
 # The parent while loop iterates over all files. The child while loop
@@ -152,15 +152,12 @@ while i < (numFiles - 1):
             filesincomp += 1
             file2comp = op.join(file_dir[i], file_list[i])
             zipMe.write(file2comp, compress_type=zipfile.ZIP_DEFLATED)
-            compSize += op.getsize(zPath)
-            # compSize += Path(zPath).stat().st_size
-            # compSize += sum([zinfo.file_size for zinfo in zipMe.filelist])
-            tqdm.write('{}{}'.format(compSize/bytemul, args.size[-1]))
+            compSize += zipMe.infolist()[-1].file_size
             zip_name.append(args.name + '.part' + str(numComp) + '.zip')
             checksum.append(hashlib.md5(open(zPath, 'rb').read()).hexdigest())
             i += 1
             pbar.set_description(
-                '   adding: {}'.format(file2comp))
+                '   added: {}\n'.format(file2comp))
             pbar.update(1)
             if i == numFiles:
                 break
