@@ -11,7 +11,6 @@ import re
 import zipfile
 from tqdm import tqdm, trange
 import hashlib
-from pathlib import Path
 
 #----------------------------------------------------------------------
 # Perma Variables
@@ -87,12 +86,22 @@ if 'csv' not in args.type and 'excel' not in args.type:
                     ' "csv" or "excel". Otherwise, leave blank.')
 
 #----------------------------------------------------------------------
+# Print Input Configuration
+#----------------------------------------------------------------------
+tqdm.write('Running comprssr with the following configuration:\n')
+tqdm.write('File Name: {}'.format(args.name))
+tqdm.write('Size Limit: {}'.format(args.size))
+tqdm.write('Summery Type: {}'.format(args.type))
+tqdm.write('Input Directory: {}'.format(args.input))
+tqdm.write('Output Directory: {}\n'.format(args.output))
+
+#----------------------------------------------------------------------
 # Declare Variables
 #----------------------------------------------------------------------
 if 'M' in args.size[-1]:
-    bytemul = 1048576
+    bytemul = 1E6
 elif 'G' in args.size[-1]:
-    bytemul = 1073741824
+    bytemul = 1E9
     
 size = int(args.size[:-1])
 sizeLimit = size * bytemul
@@ -134,14 +143,16 @@ zip_name = []
 checksum = []
 numComp = 0
 pbar = tqdm(total=numFiles - 1,
+            desc='Compressing',
             ncols=consoleCols,
             unit='file')
 while i < (numFiles - 1):
     compSize = 0
     zPath = op.join(args.output,
                         args.name + '.part' + str(numComp) + '.zip')
+    tqdm.write('')                    
     tqdm.write(('=' * consoleCols))
-    tqdm.write('Creating {}.part{}.zip'.format(args.name, numComp))
+    tqdm.write('Creating {}.part{}.zip\n'.format(args.name, numComp))
     filesincomp = 0
     # This loop creates a new zipfile, added each while iteratively
     # and checks its size. Enclosing this in a while loop allows this
@@ -151,18 +162,20 @@ while i < (numFiles - 1):
         while compSize < sizeLimit:
             filesincomp += 1
             file2comp = op.join(file_dir[i], file_list[i])
+            tqdm.write('   adding: {}'.format(file2comp))
             zipMe.write(file2comp, compress_type=zipfile.ZIP_DEFLATED)
+            # Check size of last file added to archive and add it to this
+            # variable
             compSize += zipMe.infolist()[-1].file_size
             zip_name.append(args.name + '.part' + str(numComp) + '.zip')
             checksum.append(hashlib.md5(open(zPath, 'rb').read()).hexdigest())
             i += 1
-            pbar.set_description(
-                '   added: {}\n'.format(file2comp))
             pbar.update(1)
             if i == numFiles:
                 break
     zipMe.close()
-    tqdm.write('Archive size: {}{}'. format(compSize/bytemul, args.size[-1]))
+    tqdm.write('')
+    tqdm.write('Archive size: {}{}'. format(op.getsize(zPath)/bytemul, args.size[-1]))
     tqdm.write('Files in archive: {}'.format(filesincomp))
     numComp += 1
 # Convert table filesize to same unit as input
@@ -172,11 +185,14 @@ dFrame = pd.DataFrame({'MD5 Checksum': checksum,
                        'Filesize ({})'.format(args.size[-1]): file_size,
                        'Directory':file_dir,
                        'Filename': file_list})
+tqdm.write('')
+tqdm.write(('=' * consoleCols))
 if 'csv' in args.type:
-    dFrame.to_csv(op.join(args.output, args.name + '.csv'))
+    dFrame.to_csv(op.join(args.output, args.name + '.csv'), sep='\t')
     tqdm.write('File saved: {}'.format(op.join(args.output, args.name + '.csv')))
 elif 'excel' in args.type:
     dFrame.to_excel(op.join(args.output, args.name + '.xlsx'))
     tqdm.write('File saved: {}'.format(op.join(args.output, args.name + '.xlsx')))
 else:
     raise Exception('Unable to save to the ouput file type.')
+tqdm.write('Archiving complete!')
